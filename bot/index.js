@@ -1563,6 +1563,7 @@ function settingsKeyboard() {
     .text(`🕐 Часовой пояс: ${state.timezone || "Europe/Moscow"}`, "settings_tz").row()
     .text(`💰 Лимит: $${limit}/день (потрачено: $${spent.toFixed(2)})`, "settings_spend_limit").row()
     .text(`🔄 Перезагрузка`, "settings_restart").row()
+    .text(`🔑 Переподключить Claude`, "settings_reauth_claude").row()
     .text(`✖ Закрыть`, "settings_close");
 }
 
@@ -1664,6 +1665,29 @@ bot.callbackQuery("settings_close", async (ctx) => {
 bot.callbackQuery("settings_back", async (ctx) => {
   await ctx.answerCallbackQuery();
   await ctx.editMessageText("⚙️ Настройки", { reply_markup: settingsKeyboard() });
+});
+
+bot.callbackQuery("settings_reauth_claude", async (ctx) => {
+  if (!isOwner(ctx)) return ctx.answerCallbackQuery();
+  await ctx.answerCallbackQuery();
+  try { await ctx.deleteMessage(); } catch {}
+  await startReauthFlow(ctx);
+});
+
+bot.callbackQuery("reauth_claude:cancel", async (ctx) => {
+  if (!isOwner(ctx)) return ctx.answerCallbackQuery();
+  await ctx.answerCallbackQuery("Отменено");
+  const s = reauthSessions.get(String(ctx.from.id));
+  if (s) {
+    clearTimeout(s.timer);
+    reauthSessions.delete(String(ctx.from.id));
+  }
+  appendReauthLog(`flow cancelled by user ${ctx.from.id}`);
+  try {
+    await ctx.editMessageText("Отменено. Когда захочешь — /settings → 🔑 Переподключить Claude");
+  } catch {
+    await ctx.reply("Отменено. Когда захочешь — /settings → 🔑 Переподключить Claude");
+  }
 });
 
 // Model selection callbacks
