@@ -1999,10 +1999,16 @@ bot.on("message:video", async (ctx) => {
 bot.on("message:text", async (ctx) => {
   if (!isOwner(ctx)) return;
 
+  const text = ctx.message.text;
+
+  // Reauth flow: highest priority — юзер вставляет URL с ?code=...
+  if (reauthSessions.has(String(ctx.from.id))) {
+    const handled = await completeReauthFlow(ctx, text);
+    if (handled) return;
+  }
+
   // Если ждём ввод секрета — обработать и не передавать в Claude
   if (await handlePendingInput(ctx)) return;
-
-  const text = ctx.message.text;
 
   // Bootstrap intercept — if wizard is active, handle answers
   if (await handleBootstrap(ctx, text)) return;
@@ -2558,6 +2564,14 @@ bot.command("connect", async (ctx) => {
   })();
 });
 
+// /reauth — запуск flow переподключения Claude.
+// Регистрируется ДО bot.on("message:text") иначе message:text перехватит
+// сообщение первым и оборвёт цепочку (классическая Grammy-ловушка).
+bot.command("reauth", async (ctx) => {
+  if (!isOwner(ctx)) return;
+  await startReauthFlow(ctx);
+});
+
 bot.callbackQuery(/^connect:cancel:(\d+)$/, async (ctx) => {
   if (!isOwner(ctx)) return ctx.answerCallbackQuery("⛔");
   const chatId = parseInt(ctx.match[1]);
@@ -2604,6 +2618,7 @@ bot.start({
       { command: "settings", description: "Настройки" },
       { command: "status", description: "Статус системы" },
       { command: "connect", description: "🔌 VS Code через туннель" },
+      { command: "reauth", description: "🔑 Переподключить Claude" },
     ]);
 
     // Initialize optional modules
