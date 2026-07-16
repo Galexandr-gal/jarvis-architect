@@ -22,3 +22,8 @@ Thumbs.db
 
 bot/node_modules/
 .media/
+
+# Крупные бизнес-файлы — храним локально, не в публичном репозитории
+knowledge/brendbuk-avtomoyka.pdf
+knowledge/brendbuk-cveta.png
+knowledge/brendbuk-shrifty.png
