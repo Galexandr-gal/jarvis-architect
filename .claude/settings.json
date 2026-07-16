@@ -48,8 +48,7 @@
     ],
     "defaultMode": "bypassPermissions",
     "additionalDirectories": [
-      "/tmp",
-      "/home/agent/projects"
+      "C:\\Users\\Александр\\Documents\\projects"
     ]
   },
   "effortLevel": "xhigh",
